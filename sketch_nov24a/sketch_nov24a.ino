@@ -7,9 +7,9 @@
 
 float R0 = 0;                   // Initial sensor resistance in clean air (will be calculated)
 
-// Constants for approximation (predefined values)
-const float a = -2.086;         // Slope of the curve
-const float b = 2.781;          // Intercept of the curve
+// Constants for approximation specific to LPG (Liquefied Petroleum Gas)
+const float a = -2.086;         // Slope of the curve for LPG
+const float b = 2.781;          // Intercept of the curve for LPG
 
 // Function to calculate sensor resistance Rs
 float calculateRs(int analogValue) {
@@ -23,7 +23,7 @@ float calibrateSensor() {
   float rsSum = 0;
   int samples = 0;
 
-  Serial.println("Calibrating the sensor... Please wait.");
+  Serial.println("Calibrating the sensor for LPG... Please wait.");
   Serial.print("Total calibration time: ");
   Serial.print(CALIBRATION_TIME / 1000);
   Serial.println(" seconds.");
@@ -34,10 +34,12 @@ float calibrateSensor() {
     rsSum += rs;
     samples++;
 
-    // Output remaining time every 5 seconds
+    // Output Rs and remaining time every 5 seconds
     if ((millis() - startTime) % 5000 < SAMPLE_INTERVAL) {
       int remainingTime = (CALIBRATION_TIME - (millis() - startTime)) / 1000;
-      Serial.print("Calibration in progress... Time left: ");
+      Serial.print("Calibration in progress... Rs: ");
+      Serial.print(rs);
+      Serial.print(" kOhms, Time left: ");
       Serial.print(remainingTime);
       Serial.println(" seconds.");
     }
@@ -49,14 +51,14 @@ float calibrateSensor() {
   float r0 = avgRs / 1.7;  // Rs/R0 in clean air is 1.7
 
   Serial.println("Calibration complete.");
-  Serial.print("R0 value: ");
+  Serial.print("R0 value (specific to LPG): ");
   Serial.print(r0);
   Serial.println(" kOhms");
 
   return r0;
 }
 
-// Function to calculate gas concentration (ppm) based on Rs/R0
+// Function to calculate LPG concentration (ppm) based on Rs/R0
 float calculatePPM(float rs) {
   float rs_ro_ratio = rs / R0;
   return pow(10, (log10(rs_ro_ratio) - b) / a);
@@ -64,7 +66,7 @@ float calculatePPM(float rs) {
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Initialization...");
+  Serial.println("Initialization for LPG detection...");
 
   // Calibrate the sensor to get the R0 value
   R0 = calibrateSensor();
@@ -81,14 +83,15 @@ void loop() {
   }
   rs /= READ_SAMPLE_TIMES;
 
-  // Calculate gas concentration
+  // Calculate LPG concentration
   float ppm = calculatePPM(rs);
 
-  // Output gas concentration and R0 value
-  Serial.print("Gas concentration (LPG): ");
+  // Output LPG concentration, Rs, and R0 value
+  Serial.print("LPG concentration: ");
   Serial.print(ppm);
-  Serial.print(" ppm, ");
-  Serial.print("R0: ");
+  Serial.print(" ppm, Rs: ");
+  Serial.print(rs);
+  Serial.print(" kOhms, R0: ");
   Serial.print(R0);
   Serial.println(" kOhms");
 
